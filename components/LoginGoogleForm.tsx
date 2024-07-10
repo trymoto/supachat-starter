@@ -1,12 +1,13 @@
-"use client";
-
 import { Button } from "./ui/button";
 import { redirect } from "next/navigation";
-import supabase from "../utils/supabase/client";
 import { GOOGLE_OAUTH_REDIRECT_URL } from "../lib/utils";
+import { createClient } from "@/utils/supabase/server";
 
 export default function LoginGoogleForm() {
   const handleSignInWithGoogle = async () => {
+    "use server";
+    const supabase = createClient();
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -18,11 +19,13 @@ export default function LoginGoogleForm() {
       console.error(error);
     }
 
-    redirect("/");
+    if (data.url) {
+      redirect(data.url);
+    }
   };
 
   return (
-    <form onSubmit={handleSignInWithGoogle}>
+    <form action={handleSignInWithGoogle}>
       <Button size="icon" className="w-full" type="submit">
         Continue with Google
       </Button>
