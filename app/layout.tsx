@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata = {
   metadataBase: new URL(DEFAULT_URL),
-  title: "Supachat starter",
+  title: "Supachat",
   description: "Simple realtime chat with NextJS and Supabase",
 };
 

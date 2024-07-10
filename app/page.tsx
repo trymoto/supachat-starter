@@ -1,5 +1,23 @@
-import { createClient } from "../utils/supabase/server";
+import Chat from "@/components/Chat";
 import { redirect } from "next/navigation";
+import { createClient } from "../utils/supabase/server";
+
+import Header from "@/components/Header";
+import { DEFAULT_URL } from "@/lib/utils";
+import type { Viewport } from "next";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
+export const metadata = {
+  metadataBase: new URL(DEFAULT_URL),
+  title: "Supachat #general",
+  description: "Chat with random people in real-time!",
+};
 
 export default async function MainPage() {
   const supabase = createClient();
@@ -13,8 +31,9 @@ export default async function MainPage() {
   }
 
   return (
-    <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
-      <h1>Main page</h1>
+    <div className="flex h-screen flex-col w-full">
+      <Header />
+      <Chat />
     </div>
   );
 }
