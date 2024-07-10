@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "./ui/button";
 import {
   Form,
   FormControl,
@@ -8,10 +8,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { generateRandomName } from "@/lib/use-random-name";
-import supabase from "@/utils/supabase/client";
+} from "./ui/form";
+import { Input } from "./ui/input";
+import { generateRandomName } from "../lib/use-random-name";
+import supabase from "../utils/supabase/client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

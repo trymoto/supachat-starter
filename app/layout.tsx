@@ -1,12 +1,9 @@
-import { ThemeProvider } from "@/components/ThemeProvider";
+import { ThemeProvider } from "../components/ThemeProvider";
+import { DEFAULT_URL } from "../lib/utils";
 import "./globals.css";
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
-
 export const metadata = {
-  metadataBase: new URL(defaultUrl),
+  metadataBase: new URL(DEFAULT_URL),
   title: "Supachat starter",
   description: "Simple realtime chat with NextJS and Supabase",
 };
