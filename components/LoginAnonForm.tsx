@@ -20,7 +20,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 const formSchema = z.object({
-  first_name: z.string().min(3).max(24),
+  full_name: z.string().min(3).max(20),
 });
 
 export default function LoginAnonForm() {
@@ -28,7 +28,7 @@ export default function LoginAnonForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      first_name: "",
+      full_name: "",
     },
   });
 
@@ -37,8 +37,7 @@ export default function LoginAnonForm() {
       const { error } = await supabase.auth.signInAnonymously({
         options: {
           data: {
-            first_name: values.first_name,
-            last_name: " ",
+            full_name: values.full_name,
           },
         },
       });
@@ -55,7 +54,7 @@ export default function LoginAnonForm() {
   );
 
   useEffect(() => {
-    form.setValue("first_name", generateRandomName());
+    form.setValue("full_name", generateRandomName());
   }, []);
 
   return (
@@ -66,7 +65,7 @@ export default function LoginAnonForm() {
       >
         <FormField
           control={form.control}
-          name="first_name"
+          name="full_name"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Display name</FormLabel>

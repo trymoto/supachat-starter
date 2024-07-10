@@ -93,26 +93,35 @@ create table
     constraint messages_author_id_fkey foreign key (author_id) references auth.users (id) on delete set null
   ) tablespace pg_default;
 
-create table public.profiles (
-  id uuid not null references auth.users on delete cascade,
-  display_name text,
-
-  primary key (id)
-);
-
-alter table public.profiles enable row level security;
+create table
+  public.profiles (
+    id uuid not null,
+    full_name text null,
+    avatar_url text null,
+    constraint profiles_pkey primary key (id),
+    constraint profiles_id_fkey foreign key (id) references auth.users (id) on delete cascade
+  ) tablespace pg_default;
 
 
 -- inserts a row into public.profiles
-create function public.handle_new_user()
+create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
-security definer set search_path = ''
+security definer
+set search_path = ''
 as $$
 begin
-  insert into public.profiles (id, display_name)
-  -- concat first_name and last_name
-  values (new.id, TRIM((new.raw_user_meta_data ->> 'first_name') || ' ' || (new.raw_user_meta_data ->> 'last_name')));
+  insert into public.profiles (id, full_name, avatar_url)
+  values (new.id,
+          trim(coalesce(new.raw_user_meta_data ->> 'full_name', '')),
+          trim(coalesce(new.raw_user_meta_data ->> 'avatar_url', '')));
+
+  if length(new.raw_user_meta_data ->> 'full_name') > 20 THEN
+    update public.profiles
+    set full_name = substring(new.raw_user_meta_data ->> 'full_name', 1, 20)
+    where id = NEW.id;
+  end if;
+
   return new;
 end;
 $$;
