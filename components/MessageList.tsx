@@ -1,48 +1,61 @@
 "use client";
 
-import Message from "@/components/Message";
+import { LinkToLatestMessage } from "@/components/LinkToLatestMessage";
+import { Message } from "@/components/Message";
+import { DomainMessage } from "@/domain/message";
 import { cn } from "@/lib/utils";
 import { getMessagesByCursor } from "@/queries/get-messages-by-cursor";
-import useSupabaseBrowser from "@/utils/supabase/browser";
+import { useSupabaseBrowser } from "@/supabase/browser";
+import { TablesInsert } from "@/supabase/database.types";
+import { messageWithProfileToDomainMessage } from "@/supabase/transformers";
 import { useQuery } from "@supabase-cache-helpers/postgrest-react-query";
 import { useIntersectionObserver } from "@uidotdev/usehooks";
 import { Loader2 } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
-import { LinkToLatestMessage } from "./LinkToLatestMessage";
-
-type Message = {
-  id: string;
-  body: string;
-  user_id?: string;
-  avatar_url?: string;
-  full_name?: string;
-};
 
 type MessageListProps = {
-  serverMessages: Message[];
+  serverMessages: DomainMessage[];
   currentUserId?: string;
 };
 
-export default memo<MessageListProps>(function MessageList({
+export const MessageList = memo<MessageListProps>(function MessageList({
   serverMessages,
   currentUserId,
 }) {
+  // STATE
+
   const supabase = useSupabaseBrowser();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const prevScrollHeight = useRef(0);
-  const [messages, setMessages] = useState<Message[]>(serverMessages);
-  const [initScrollDone, setInitScrollDone] = useState(false);
-  const currentOldestMessageId = messages[messages.length - 1]?.id || "";
+  const [messages, setMessages] = useState<DomainMessage[]>(serverMessages);
   const [hasMore, setHasMore] = useState(true);
-  const [loadTriggerRef, topIntersection] = useIntersectionObserver({
+  const hasMoreRef = useRef(hasMore);
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [initScrollDone, setInitScrollDone] = useState(false);
+  const prevScrollHeight = useRef(0);
+  const [topRef, topIntersection] = useIntersectionObserver({
     threshold: 0,
   });
-  const [latestMessageRef, bottomIntersection] = useIntersectionObserver({
+  const [bottomRef, bottomIntersection] = useIntersectionObserver({
     threshold: 0,
   });
 
+  // DERIVED
+
+  const currentOldestMessageId = messages[messages.length - 1]?.id || "";
   const isIntersectingTop = !!topIntersection?.isIntersecting;
+  const isIntersectingTopRef = useRef(isIntersectingTop);
   const isIntersectingBottom = !!bottomIntersection?.isIntersecting;
+
+  // QUERIES
+
+  const { data: olderMessages, refetch: loadOlderMessages } = useQuery(
+    getMessagesByCursor(supabase, currentOldestMessageId),
+    {
+      enabled: false,
+    }
+  );
+
+  // EFFECTS
 
   useEffect(
     function reactToTopIntersection() {
@@ -53,15 +66,11 @@ export default memo<MessageListProps>(function MessageList({
           }
         });
       }
+
+      isIntersectingTopRef.current = isIntersectingTop;
+      hasMoreRef.current = hasMore;
     },
     [isIntersectingTop, hasMore]
-  );
-
-  const { data: olderMessages, refetch: loadOlderMessages } = useQuery(
-    getMessagesByCursor(supabase, currentOldestMessageId),
-    {
-      enabled: false,
-    }
   );
 
   useEffect(
@@ -75,8 +84,19 @@ export default memo<MessageListProps>(function MessageList({
             schema: "public",
             table: "messages",
           },
-          (payload) => {
-            setMessages((prev) => [payload.new as Message].concat(prev));
+          (payload: { new: TablesInsert<"messages"> }) => {
+            if (!payload.new.id) return;
+
+            const domainObject: DomainMessage = {
+              id: payload.new.id,
+              body: payload.new.body || "",
+              userId: payload.new.user_id || null,
+              avatarUrl: null,
+              fullName: null,
+            };
+
+            setMessages((prev) => [domainObject].concat(prev));
+
             if (payload.new.user_id === currentUserId) {
               document.documentElement.scrollTop =
                 document.documentElement.scrollHeight;
@@ -96,13 +116,9 @@ export default memo<MessageListProps>(function MessageList({
     function mergeOlderMessages() {
       if (!olderMessages || !olderMessages.length) return;
 
-      const preparedOlderMessages: Message[] = olderMessages.map((message) => ({
-        id: message.id,
-        body: message.body || "",
-        user_id: message.user_id || "",
-        avatar_url: message.profiles?.avatar_url || "",
-        full_name: message.profiles?.full_name || "",
-      }));
+      const preparedOlderMessages: DomainMessage[] = olderMessages
+        .map((item) => messageWithProfileToDomainMessage(item))
+        .filter((item): item is DomainMessage => Boolean(item));
 
       setMessages((prev) => prev.concat(preparedOlderMessages));
     },
@@ -118,21 +134,32 @@ export default memo<MessageListProps>(function MessageList({
       const scrolledFromBottom = maxScrollTop - scrollTop;
 
       if (scrolledFromBottom < 200) {
+        // only scroll to bottom if user is not reading old messages
         document.documentElement.scrollTo({
           top: document.documentElement.scrollHeight,
           behavior: "smooth",
         });
       } else {
-        // maintain scroll position using prevScrollHeight
+        // if user is reading old messages, keep the scroll position
         document.documentElement.scrollTop =
           scrollHeight - prevScrollHeight.current;
+
+        // edge case when topIntersection is not reset after
+        // loading, but is still visible so trigger it once more
+        if (isIntersectingTopRef.current && hasMoreRef.current) {
+          loadOlderMessages().then(({ data: result }) => {
+            if (!result?.data || !result.data.length) {
+              setHasMore(false);
+            }
+          });
+        }
       }
 
       prevScrollHeight.current = scrollHeight;
 
       if (audioRef.current) audioRef.current.play().catch(() => {});
     },
-    [messages]
+    [messages, loadOlderMessages]
   );
 
   useEffect(function scrollToBottomAndGetAudioOnInit() {
@@ -146,24 +173,20 @@ export default memo<MessageListProps>(function MessageList({
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4 p-4 flex flex-col-reverse">
-      <div className="h-[6em]" ref={latestMessageRef}></div>
+      <div className="h-[6em]" ref={bottomRef}></div>
       {messages
         ? messages.map((message) => (
             <Message
               key={message.id}
-              fullName={message.full_name}
-              avatarUrl={message.avatar_url}
-              body={message.body}
-              id={message.id}
-              userId={message.user_id}
-              self={message.user_id === currentUserId}
+              self={message.userId === currentUserId}
+              {...message}
             />
           ))
         : null}
       <div className="flex justify-center pt-[4em]">
         <Loader2
           className={cn("mr-2 h-4 w-4 animate-spin", hasMore ? "" : "hidden")}
-          ref={loadTriggerRef}
+          ref={topRef}
         />
       </div>
       <LinkToLatestMessage enabled={initScrollDone && !isIntersectingBottom} />

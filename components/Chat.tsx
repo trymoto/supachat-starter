@@ -1,49 +1,46 @@
+import { MessageForm } from "@/components/MessageForm";
+import { MessageList } from "@/components/MessageList";
+import { DomainMessage } from "@/domain/message";
 import { getMessages } from "@/queries/get-messages";
 import { getProfileById } from "@/queries/get-profile-by-id";
-import useSupabaseServer from "@/utils/supabase/server-client";
+import { getUser } from "@/queries/get-user";
+import { useSupabaseServer } from "@/supabase/server";
+import { messageWithProfileToDomainMessage } from "@/supabase/transformers";
 import { prefetchQuery } from "@supabase-cache-helpers/postgrest-react-query";
 import {
   HydrationBoundary,
   QueryClient,
   dehydrate,
 } from "@tanstack/react-query";
-import { cookies } from "next/headers";
-import MessageForm from "./MessageForm";
-import MessageList from "./MessageList";
+import { redirect } from "next/navigation";
 
 export default async function Chat() {
   const queryClient = new QueryClient();
-  const cookieStore = cookies();
-  const supabase = useSupabaseServer(cookieStore);
+  const supabase = useSupabaseServer();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [user, messages] = await Promise.all([
+    getUser(supabase),
+    getMessages(supabase),
+  ]);
 
-  const { data } = await getMessages(supabase);
+  if (!user) return redirect("/login");
 
-  const serverMessages =
-    data?.map((item) => ({
-      id: item.id,
-      body: item.body || "",
-      user_id: item.user_id || "",
-      avatar_url: item.profiles?.avatar_url || "",
-      full_name: item.profiles?.full_name || "",
-    })) || [];
+  const serverMessages: DomainMessage[] =
+    messages.data
+      ?.map((item) => messageWithProfileToDomainMessage(item))
+      .filter((item): item is DomainMessage => item !== null) || [];
 
-  // warm up profile cache to avoid unnecessary fetching
+  // warm up profile cache to avoid unnecessary fetching on the client
   await Promise.allSettled(
-    serverMessages.map((message) => {
-      return prefetchQuery(
-        queryClient,
-        getProfileById(supabase, message.user_id)
-      );
+    serverMessages.map((item) => {
+      if (!item.userId) return Promise.resolve();
+      return prefetchQuery(queryClient, getProfileById(supabase, item.userId));
     })
   );
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <MessageList serverMessages={serverMessages} currentUserId={user?.id} />
+      <MessageList serverMessages={serverMessages} currentUserId={user.id} />
       <MessageForm />
     </HydrationBoundary>
   );

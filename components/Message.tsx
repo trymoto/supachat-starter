@@ -1,25 +1,22 @@
 "use client";
 
-import useSupabaseBrowser from "@/utils/supabase/browser";
 import { getProfileById } from "@/queries/get-profile-by-id";
+import { useSupabaseBrowser } from "@/supabase/browser";
 import { useQuery } from "@supabase-cache-helpers/postgrest-react-query";
 
+import { AvatarWithFallback } from "@/components/AvatarWithFallback";
 import { cn } from "@/lib/utils";
-import { format, isToday } from "date-fns";
+import { format, isToday, lightFormat } from "date-fns";
 import { memo, useEffect, useMemo } from "react";
 import { decodeTime } from "ulid";
-import AvatarWithFallback from "./AvatarWithFallback";
+import { DomainMessage } from "@/domain/message";
+import { UTCDate } from "@date-fns/utc";
 
-type MessageProps = {
-  id: string;
-  body: string;
-  userId?: string;
-  fullName?: string;
-  avatarUrl?: string;
+type MessageProps = DomainMessage & {
   self?: boolean;
 };
 
-export default memo<MessageProps>(function Message({
+export const Message = memo<MessageProps>(function Message({
   id,
   userId,
   fullName,
@@ -27,17 +24,25 @@ export default memo<MessageProps>(function Message({
   avatarUrl,
   self,
 }) {
+  // QUERIES
+
   const supabase = useSupabaseBrowser();
-  const { data: profile, refetch } = useQuery(
+
+  // profile may be missing if message comes from realtime event
+  // so we hydrate it using react-query cache if possible
+  const { data: profile, refetch: fetchProfile } = useQuery(
     getProfileById(supabase, userId || ""),
     { enabled: false }
   );
+
+  // DERIVED
 
   const fullNameHydrated = fullName || profile?.full_name;
   const avatarUrlHydrated = avatarUrl || profile?.avatar_url;
 
   const avatar = useMemo(() => {
     if (self) return null;
+
     return (
       <AvatarWithFallback
         className="w-8 h-8 border-2 border-primary-foreground"
@@ -49,19 +54,22 @@ export default memo<MessageProps>(function Message({
 
   const time = useMemo(() => {
     const timestamp = decodeTime(id);
-    const date = new Date(timestamp);
+    const date = new UTCDate(timestamp);
 
     return isToday(date)
-      ? format(date, "h:mm a")
-      : format(date, "MMM d, h:mm a"); // Full format for other dates
+      ? lightFormat(date, "h:mm a")
+      : lightFormat(date, "MMM d, h:mm a");
   }, [id]);
 
-  useEffect(() => {
-    if (self) return;
-    if (userId && !fullNameHydrated) {
-      refetch();
-    }
-  }, [userId, fullNameHydrated]);
+  // EFFECTS
+
+  useEffect(
+    function hydrateProfileIfUserExists() {
+      if (self) return;
+      if (userId && !fullNameHydrated) fetchProfile();
+    },
+    [userId, fullNameHydrated]
+  );
 
   return (
     <div

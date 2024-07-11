@@ -1,4 +1,5 @@
-import { TypedSupabaseClient } from "@/utils/types";
+import { Database } from "@/supabase/database.types";
+import { TypedSupabaseClient } from "@/supabase/typed-database-client";
 
 export function getMessages(client: TypedSupabaseClient) {
   return client
@@ -14,3 +15,8 @@ export function getMessages(client: TypedSupabaseClient) {
     .order("id", { ascending: false })
     .limit(10);
 }
+
+export type RawMessageWithProfile =
+  Database["public"]["Tables"]["messages"]["Row"] & {
+    profiles: Database["public"]["Tables"]["profiles"]["Row"] | null;
+  };

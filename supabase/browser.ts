@@ -1,11 +1,11 @@
+import type { Database } from "@/supabase/database.types";
+import type { TypedSupabaseClient } from "@/supabase/typed-database-client";
 import { createBrowserClient } from "@supabase/ssr";
-import type { Database } from "@/utils/database.types";
-import type { TypedSupabaseClient } from "@/utils/types";
 import { useMemo } from "react";
 
 let client: TypedSupabaseClient | undefined;
 
-function getSupabaseBrowserClient() {
+export function getSupabaseBrowserClient() {
   if (client) {
     return client;
   }
@@ -18,8 +18,6 @@ function getSupabaseBrowserClient() {
   return client;
 }
 
-function useSupabaseBrowser() {
+export function useSupabaseBrowser() {
   return useMemo(getSupabaseBrowserClient, []);
 }
-
-export default useSupabaseBrowser;

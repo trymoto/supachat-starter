@@ -1,3 +1,18 @@
+const adjectives = [
+  "Happy",
+  "Excited",
+  "Bored",
+  "Hungry",
+  "Thirsty",
+  "Tired",
+  "Silly",
+  "Thoughtful",
+  "Sleepy",
+  "Confused",
+  "Curious",
+  "Sneaky",
+  "Clever",
+];
 const nouns = [
   "Dog",
   "Cat",
@@ -9,23 +24,16 @@ const nouns = [
   "Gerbil",
   "Guinea Pig",
   "Chinchilla",
-];
-const adjectives = [
-  "Happy",
-  "Sad",
-  "Angry",
-  "Excited",
-  "Bored",
-  "Hungry",
-  "Thirsty",
-  "Tired",
-  "Silly",
-  "Scared",
+  "Frog",
+  "Lizard",
+  "Snake",
+  "Parrot",
+  "Mouse",
 ];
 
 export function generateRandomName() {
-  const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
   const randomAdjective =
     adjectives[Math.floor(Math.random() * adjectives.length)];
+  const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
   return `${randomAdjective} ${randomNoun}`;
 }

@@ -1,45 +1,26 @@
 "use client";
 
-import { memo, useCallback, useEffect, useState } from "react";
-import supabase from "@/utils/supabase/client";
+import { getOnlineCount } from "@/queries/get-online-count";
+import { useSupabaseBrowser } from "@/supabase/browser";
+import { useQuery } from "@supabase-cache-helpers/postgrest-react-query";
+import { memo, useEffect } from "react";
 
-type OnlineIndicatorProps = {
-  initialCount?: number;
-};
+export const OnlineIndicator = memo(function OnlineIndicator() {
+  const supabase = useSupabaseBrowser();
+  const { data, refetch } = useQuery(getOnlineCount(supabase));
 
-export default memo<OnlineIndicatorProps>(function OnlineIndicator({
-  initialCount = 1,
-}) {
-  const [count, setCount] = useState(Math.max(initialCount, 1));
-
-  const fetchOnlineCount = useCallback(async () => {
-    const { data } = await supabase
-      .from("online")
-      .select("count")
-      .limit(1)
-      .single();
-
-    if (data)
-      setCount((prev) => {
-        const result = data.count - prev > 1 ? prev + 1 : data.count;
-        return Math.max(result, 1);
-      });
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchOnlineCount();
-    }, 5000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [fetchOnlineCount]);
+  useEffect(
+    function pollOnlineCount() {
+      const interval = setInterval(refetch, 5000);
+      return () => clearInterval(interval);
+    },
+    [refetch]
+  );
 
   return (
     <p className="text-xs text-muted-foreground">
       <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-      {count} Online
+      {data?.count || 1} Online
     </p>
   );
 });

@@ -1,9 +1,10 @@
 import Chat from "@/components/Chat";
 import { redirect } from "next/navigation";
-import { createClient } from "../utils/supabase/server";
 
 import Header from "@/components/Header";
 import { DEFAULT_URL } from "@/lib/utils";
+import { getUser } from "@/queries/get-user";
+import { useSupabaseServer } from "@/supabase/server";
 import type { Viewport } from "next";
 
 export const viewport: Viewport = {
@@ -21,15 +22,10 @@ export const metadata = {
 };
 
 export default async function MainPage() {
-  const supabase = createClient();
+  const supabase = useSupabaseServer();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return redirect("/login");
-  }
+  const user = await getUser(supabase);
+  if (!user) return redirect("/login");
 
   return (
     <div className="flex h-[100dvh] flex-col w-full">

@@ -1,9 +1,9 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MoveDown } from "lucide-react";
 import { memo, useCallback } from "react";
-import { Button } from "./ui/button";
 
 type LinkToLatestMessageProps = {
   enabled?: boolean;
@@ -12,10 +12,7 @@ type LinkToLatestMessageProps = {
 export const LinkToLatestMessage = memo<LinkToLatestMessageProps>(
   function LinkToLatestMessage({ enabled = false }) {
     const handleClick = useCallback(() => {
-      window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: "instant",
-      });
+      document.documentElement.scrollTop = document.body.scrollHeight;
     }, []);
 
     return (

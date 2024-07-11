@@ -1,6 +1,6 @@
-import { Button } from "../../components/ui/button";
+import { Button } from "@/components/ui/button";
 
-import LoginGoogleForm from "../../components/LoginGoogleForm";
+import LoginGoogleForm from "@/components/LoginGoogleForm";
 import Link from "next/link";
 
 export default function Login() {

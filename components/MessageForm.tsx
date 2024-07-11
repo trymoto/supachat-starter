@@ -1,23 +1,33 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useSupabaseBrowser } from "@/supabase/browser";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Send } from "lucide-react";
 import { memo, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import supabase from "../utils/supabase/client";
-import { Button } from "./ui/button";
-import { Form, FormControl, FormDescription, FormField } from "./ui/form";
-import { Input } from "./ui/input";
+import { toast } from "./ui/use-toast";
 
 const MAX_MESSAGE_LENGTH = 200;
+const MESSAGE_LENGTH_WARNING_THRESHOLD = MAX_MESSAGE_LENGTH - 10;
 
 const formSchema = z.object({
   body: z.string().min(1).max(MAX_MESSAGE_LENGTH),
 });
 
-export default memo(function MessageForm() {
+export const MessageForm = memo(function MessageForm() {
+  // STATE
+
+  const supabase = useSupabaseBrowser();
   const inputRef = useRef<HTMLInputElement>(null);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -26,6 +36,8 @@ export default memo(function MessageForm() {
     },
   });
 
+  // HANDLERS
+
   const onSubmit = useCallback(
     async (values: z.infer<typeof formSchema>) => {
       const { error } = await supabase
@@ -33,7 +45,12 @@ export default memo(function MessageForm() {
         .insert({ body: values.body });
 
       if (error) {
-        console.error(error);
+        toast({
+          title: "An error occurred",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
       }
 
       form.reset();
@@ -43,7 +60,7 @@ export default memo(function MessageForm() {
   );
 
   return (
-    <div className="fixed w-full bottom-0 z-10 bg-background px-4 py-6 border-t border-slate-300">
+    <div className="fixed w-full bottom-0 z-10 bg-background px-4 py-4 border-t border-stone-500">
       <div className="mx-auto flex max-w-3xl items-center gap-2">
         <Form {...form}>
           <form
@@ -70,7 +87,7 @@ export default memo(function MessageForm() {
                   <FormDescription
                     className={cn(
                       "absolute right-2 bottom-0 text-xs",
-                      field.value.length > MAX_MESSAGE_LENGTH - 10
+                      field.value.length > MESSAGE_LENGTH_WARNING_THRESHOLD
                         ? "text-destructive"
                         : "text-muted-foreground"
                     )}
