@@ -71,7 +71,11 @@
     @apply border-border;
   }
   body {
+    scrollbar-gutter: stable;
     @apply bg-background text-foreground;
+  }
+  html {
+    scrollbar-gutter: stable;
   }
 }
 

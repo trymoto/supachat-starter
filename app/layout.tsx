@@ -1,5 +1,4 @@
 import { ReactQueryClientProvider } from "@/components/ReactQueryProvider";
-import { ThemeProvider } from "../components/ThemeProvider";
 import { DEFAULT_URL } from "../lib/utils";
 import "./globals.css";
 
@@ -16,17 +15,10 @@ export default function RootLayout({
 }) {
   return (
     <ReactQueryClientProvider>
-      <html lang="en" suppressHydrationWarning>
+      <html lang="en" className="no-scrollbar">
         <body className="bg-background text-foreground flex flex-col items-center overflow-y-auto w-full">
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem={true}
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
-          <audio id="tap-audio" src="tap.mp3"></audio>
+          {children}
+          <audio id="tap-audio" src="/tap.mp3"></audio>
         </body>
       </html>
     </ReactQueryClientProvider>

@@ -44,11 +44,7 @@ export default async function Chat() {
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <MessageList serverMessages={serverMessages} currentUserId={user?.id} />
-      <div className="fixed w-full bottom-0 z-10 bg-background px-4 py-6 border-t border-slate-300">
-        <div className="mx-auto flex max-w-3xl items-center gap-2">
-          <MessageForm />
-        </div>
-      </div>
+      <MessageForm />
     </HydrationBoundary>
   );
 }

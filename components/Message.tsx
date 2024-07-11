@@ -53,7 +53,7 @@ export default memo<MessageProps>(function Message({
 
     return isToday(date)
       ? format(date, "h:mm a")
-      : format(date, "MMMM do, yyyy"); // Full format for other dates
+      : format(date, "MMM d, h:mm a"); // Full format for other dates
   }, [id]);
 
   useEffect(() => {

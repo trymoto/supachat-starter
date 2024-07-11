@@ -60,7 +60,7 @@ export default async function Header() {
             <DropdownMenuLabel>{profile.full_name}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <Link href="/auth/logout">
-              <DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>

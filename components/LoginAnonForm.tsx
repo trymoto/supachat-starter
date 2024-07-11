@@ -1,5 +1,13 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { generateRandomName } from "../lib/generate-random-name";
+import supabase from "../utils/supabase/client";
 import { Button } from "./ui/button";
 import {
   Form,
@@ -10,20 +18,13 @@ import {
   FormMessage,
 } from "./ui/form";
 import { Input } from "./ui/input";
-import { generateRandomName } from "../lib/generate-random-name";
-import supabase from "../utils/supabase/client";
-import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
 
 const formSchema = z.object({
   full_name: z.string().min(3).max(20),
 });
 
 export default function LoginAnonForm() {
+  const [navigating, setNavigating] = useState(false);
   const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,6 +50,7 @@ export default function LoginAnonForm() {
       }
 
       router.push("/");
+      setNavigating(true);
     },
     [supabase]
   );
@@ -56,6 +58,8 @@ export default function LoginAnonForm() {
   useEffect(() => {
     form.setValue("full_name", generateRandomName());
   }, []);
+
+  const disabled = form.formState.isSubmitting || navigating;
 
   return (
     <Form {...form}>
@@ -70,7 +74,11 @@ export default function LoginAnonForm() {
             <FormItem>
               <FormLabel>Display name</FormLabel>
               <FormControl>
-                <Input placeholder="Type here..." {...field} />
+                <Input
+                  placeholder="Type here..."
+                  {...field}
+                  disabled={disabled}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -78,11 +86,13 @@ export default function LoginAnonForm() {
         />
         <div className="flex justify-between items-center gap-4">
           <Link href="/login" passHref legacyBehavior className="grow">
-            <Button variant="outline" className="grow">
+            <Button variant="outline" className="grow" disabled={disabled}>
               Cancel
             </Button>
           </Link>
-          <Button className="grow">Continue</Button>
+          <Button className="grow" disabled={disabled}>
+            Continue
+          </Button>
         </div>
       </form>
     </Form>
