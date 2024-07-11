@@ -1,3 +1,4 @@
+import { ReactQueryClientProvider } from "@/components/ReactQueryProvider";
 import { ThemeProvider } from "../components/ThemeProvider";
 import { DEFAULT_URL } from "../lib/utils";
 import "./globals.css";
@@ -14,9 +15,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="bg-background text-foreground">
-        <main className="min-h-[100dvh] flex flex-col items-center">
+    <ReactQueryClientProvider>
+      <html lang="en" suppressHydrationWarning>
+        <body className="bg-background text-foreground flex flex-col items-center overflow-y-auto w-full">
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
@@ -25,8 +26,9 @@ export default function RootLayout({
           >
             {children}
           </ThemeProvider>
-        </main>
-      </body>
-    </html>
+          <audio id="tap-audio" src="tap.mp3"></audio>
+        </body>
+      </html>
+    </ReactQueryClientProvider>
   );
 }

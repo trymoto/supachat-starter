@@ -10,7 +10,7 @@ import {
   FormMessage,
 } from "./ui/form";
 import { Input } from "./ui/input";
-import { generateRandomName } from "../lib/use-random-name";
+import { generateRandomName } from "../lib/generate-random-name";
 import supabase from "../utils/supabase/client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";

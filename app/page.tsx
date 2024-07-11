@@ -11,6 +11,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  interactiveWidget: "resizes-content",
 };
 
 export const metadata = {
@@ -31,7 +32,7 @@ export default async function MainPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col w-full">
+    <div className="flex h-[100dvh] flex-col w-full">
       <Header />
       <Chat />
     </div>
